@@ -1,0 +1,147 @@
+<!doctype HTML>
+<link rel="stylesheet" href="/css/main.css" />
+<script src="/js/pixi.min.js"></script>
+<script src="/js/mtrand.js"></script>
+<canvas id="viewport"></canvas>
+<div id="sidebar">
+	<div id="sidetop">
+		<button id="restart">⟳ Restart</button>
+		<button id="playpause">Pause</button>
+	</div>
+	<div id="sidebot">
+		<button id="addai">+ Add AI</button>
+		<div id="mapset">
+			MAP SETTINGS GO HERE
+		</div>
+	</div>
+</div>
+<script src="/js/arena-engine.js"></script>
+<script>
+	function pd(x,y,X,Y){ return ((x-X)**2+(y-Y)**2)**0.5; }
+	function pa(x,y,X,Y){ return Math.atan2(X-x,y-Y); }
+	function goto(s,x,y){
+		let da = pa(s.x,s.y,x,y),
+			dd = pd(s.x,s.y,x,y),
+			ms = Math.sqrt(dd*s.acceleration),
+			mv = { x:ms*Math.sin(da), y:-ms*Math.cos(da) },
+			dv = { x:mv.x-s.v.x, y:mv.y-s.v.y};
+		s.thrust(pd(0,0,dv.x,dv.y)/s.acceleration,pa(0,0,dv.x,dv.y));
+	}
+	Options.Factions[1].ai.updateFn = ((data,step)=>{
+		let GO = data.stations.enemies.length + data.ships.enemies.length;
+		if(GO){
+			let S = data.stations.yours;
+			let H = data.ships.yours;
+			let HA = {}; H.forEach((h)=>{ HA[h.id] = h; })
+			let D = data.data;
+			D.fleets = D.fleets || {};
+			let STAT = data.stations.enemies.concat(data.stations.unowned);
+			S.forEach((s)=>{
+				D.fleets[s.id] = D.fleets[s.id] || [];
+				if(s.resources > 100){ let v; (v=s.buildShip()) && H.push(v); HA[v.id]=v; D.fleets[s.id].push(v.id); }
+				D.fleets[s.id].slice().forEach((i)=>{
+					// Ship was destroyed
+					if(!Object.keys(HA).includes(i+'')){
+						D.fleets[s.id].splice(D.fleets[s.id].indexOf(i),1);
+						// console.log('MEXTEX:: BOOM')
+					}
+				});
+				// console.log('MEXTEX:: FL ['+s.id+'] size '+D.fleets[s.id].length)
+				// D.fleets[s.id].length && console.log(D.fleets[s.id]);
+				if(D.fleets[s.id].length > 1){
+					D.fleets[s.id].target = STAT.sort((a,b)=>{
+						return pd(a.x,a.y,s.x,s.y) - pd(b.x,b.y,s.x,s.y);
+					})[0];
+					D.fleets[s.id].forEach((i)=>{
+						let d = HA[i];
+						goto(d,D.fleets[s.id].target.x,D.fleets[s.id].target.y);
+						let t = data.ships.enemies.sort((a,b)=>{ return pd(a.x,a.y,d.x,d.y) - pd(b.x,b.y,d.x,d.y); })[0];
+						if(t && pd(d.x,d.y,t.x,t.y) <= d.weapon.distance + d.size){
+							d.shoot(pa(d.x,d.y,t.x,t.y));
+						}
+					});
+				}
+				else {
+					D.fleets[s.id].forEach((i)=>{
+						let d = HA[i];
+						goto(d,s.x,s.y);
+						let t = data.ships.enemies.sort((a,b)=>{ return pd(a.x,a.y,d.x,d.y) - pd(b.x,b.y,d.x,d.y); })[0];
+						if(t && pd(d.x,d.y,t.x,t.y) <= d.weapon.distance + d.size){
+							d.shoot(pa(d.x,d.y,t.x,t.y));
+						}
+					});
+				}
+			});
+		}
+		else {
+			let H = data.ships.yours;
+			let n = 0;
+			H.forEach((h)=>{
+				goto(h,
+					+(h.weapon.distance + Math.sin(n/80)*100*((step%50+n%50)/100*0.75+0.25))*Math.sin(n+step/100),
+					-(h.weapon.distance + Math.sin(n/80)*100*((step%50+n%50)/100*0.75+0.25))/2*Math.cos((n++)+step/100));
+				h.shoot(pa(h.x,h.y,0,0));
+			});
+		}
+	});
+
+	Options.Factions[0].ai.updateFn = ((data,step)=>{
+		let GO = data.stations.enemies.length + data.ships.enemies.length;
+		if(GO){
+			let S = data.stations.yours;
+			let H = data.ships.yours;
+			let FL = data.data;
+			let STAT = data.stations.enemies.concat(data.stations.unowned);
+			// .sort((a,b)=>{
+			// 	return
+			// 		data.ships.enemies.filter((s)=>{ return pd(s.x,s.y,a.x,a.y) < 100; }).length -
+			// 		data.ships.enemies.filter((s)=>{ return pd(s.x,s.y,b.x,b.y) < 100; }).length;
+			// });
+			S.sort((a,b)=>{
+				return pd(a.x,a.y,0,0)-pd(b.x,b.y,0,0);
+			});
+
+			S.forEach((s)=>{
+				if(s.resources > 100){ let v; (v=s.buildShip()) && H.push(v); }
+			});
+
+			if(H.length > 50 || FL.act){
+				FL.act = FL.act ? H.length > 25 : H.length > 50;
+				H.forEach((h)=>{
+					goto(h,STAT[0].x,STAT[0].y)
+					let t = data.ships.enemies.filter((s)=>{
+						return pd(h.x,h.y,s.x,s.y) <= h.weapon.distance + s.size;
+					}).sort((a,b)=>{ return pd(a.x,a.y,h.x,h.y) - pd(b.x,b.y,h.x,h.y); });
+					if(t.length && (t = t[t.length * data.random()**2 | 0])){
+						h.shoot(pa(h.x,h.y,t.x,t.y));
+					}
+				});
+			}
+			else {
+				H.forEach((h)=>{
+					goto(h,S[0].x,S[0].y)
+					let t = data.ships.enemies.filter((s)=>{
+						return pd(h.x,h.y,s.x,s.y) <= h.weapon.distance + s.size;
+					}).sort((a,b)=>{ return pd(a.x,a.y,h.x,h.y) - pd(b.x,b.y,h.x,h.y); });
+					if(t.length && (t = t[t.length * data.random()**2 | 0])){
+						h.shoot(pa(h.x,h.y,t.x,t.y));
+					}
+				});
+			}
+		}
+		else {
+			let H = data.ships.yours;
+			let t = H.length * 4;
+			let n = 0;
+			H.forEach((h)=>{
+				goto(h,
+					0 - t/2 + 4*n,
+					25 * Math.cos(step/100 + n * 50/t));
+				h.shoot(pa(h.x,h.y,h.x,1000));
+				n++;
+			});
+		}
+	});
+
+	Restart();
+</script>

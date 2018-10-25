@@ -27,7 +27,7 @@
 			dv = { x:mv.x-s.v.x, y:mv.y-s.v.y};
 		s.thrust(pd(0,0,dv.x,dv.y)/s.acceleration,pa(0,0,dv.x,dv.y));
 	}
-	Options.Factions[1].ai.updateFn = ((data,step)=>{
+	let MexTex2_update = ((data,step)=>{
 		let GO = data.stations.enemies.length + data.ships.enemies.length;
 		if(GO){
 			let S = data.stations.yours;
@@ -38,7 +38,7 @@
 			let STAT = data.stations.enemies.concat(data.stations.unowned);
 			S.forEach((s)=>{
 				D.fleets[s.id] = D.fleets[s.id] || [];
-				if(s.resources > 100){ let v; (v=s.buildShip()) && H.push(v); HA[v.id]=v; D.fleets[s.id].push(v.id); }
+				if(s.resources > 100){ s.buildShip(); }
 				D.fleets[s.id].slice().forEach((i)=>{
 					// Ship was destroyed
 					if(!Object.keys(HA).includes(i+'')){
@@ -84,29 +84,23 @@
 			});
 		}
 	});
-
-	Options.Factions[0].ai.updateFn = ((data,step)=>{
+	let Saber_update = ((data,step)=>{
 		let GO = data.stations.enemies.length + data.ships.enemies.length;
 		if(GO){
 			let S = data.stations.yours;
 			let H = data.ships.yours;
 			let FL = data.data;
 			let STAT = data.stations.enemies.concat(data.stations.unowned);
-			// .sort((a,b)=>{
-			// 	return
-			// 		data.ships.enemies.filter((s)=>{ return pd(s.x,s.y,a.x,a.y) < 100; }).length -
-			// 		data.ships.enemies.filter((s)=>{ return pd(s.x,s.y,b.x,b.y) < 100; }).length;
-			// });
 			S.sort((a,b)=>{
 				return pd(a.x,a.y,0,0)-pd(b.x,b.y,0,0);
 			});
 
 			S.forEach((s)=>{
-				if(s.resources > 100){ let v; (v=s.buildShip()) && H.push(v); }
+				if(s.resources > 100){ s.buildShip(); }
 			});
 
-			if(H.length > 50 || FL.act){
-				FL.act = FL.act ? H.length > 25 : H.length > 50;
+			if(H.length > 5 || FL.act){
+				FL.act = H.length > 5 ? true : false;
 				H.forEach((h)=>{
 					goto(h,STAT[0].x,STAT[0].y)
 					let t = data.ships.enemies.filter((s)=>{
@@ -137,11 +131,17 @@
 				goto(h,
 					0 - t/2 + 4*n,
 					25 * Math.cos(step/100 + n * 50/t));
-				h.shoot(pa(h.x,h.y,h.x,1000));
+				[0,1,2,3,4].includes((step+n)%80) && h.shoot(pa(h.x,h.y,h.x,1000)) || h.reload();
 				n++;
 			});
 		}
 	});
+
+	// Options.Factions[0].ai.initFn = null;
+	Options.Factions[0].ai.updateFn = MexTex2_update;
+
+	// Options.Factions[1].ai.initFn = null;
+	Options.Factions[1].ai.updateFn = Saber_update;
 
 	Restart();
 </script>

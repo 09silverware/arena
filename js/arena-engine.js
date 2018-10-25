@@ -341,17 +341,20 @@ let Restart;
 					you: this.faction.id,
 					allies: [],
 					enemies: [],
+					all: [],
 				},
 				ships:{
 					yours:[],
 					allies:[],
 					enemies:[],
+					all: [],
 				},
 				stations:{
 					yours:[],
 					allies:[],
 					unowned:[],
 					enemies:[],
+					all: [],
 				},
 				walls:[],
 				random:this.rand,
@@ -367,6 +370,7 @@ let Restart;
 				else {
 					data.factions.enemies.push(f.id);
 				}
+				data.factions.all.push(f.id);
 			});
 			ships.forEach((s)=>{
 				if(s.faction == this.faction){
@@ -378,6 +382,7 @@ let Restart;
 				else {
 					data.ships.enemies.push(s.sandbox(this.faction));
 				}
+				data.ships.all.push(s.sandbox(this.faction));
 			});
 			stations.forEach((s)=>{
 				if(s.faction == this.faction){
@@ -387,14 +392,15 @@ let Restart;
 					data.stations.allies.push(s.sandbox(this.faction));
 				}
 				else if(s.faction==null){
-					data.stations.unowned.push(s.sandbox());
+					data.stations.unowned.push(s.sandbox(this.faction));
 				}
 				else {
 					data.stations.enemies.push(s.sandbox(this.faction));
 				}
+				data.stations.all.push(s.sandbox(this.faction));
 			});
 			walls.forEach((w)=>{
-				data.walls.push(w.sandbox());
+				data.walls.push(w.sandbox(this.faction));
 			});
 			try {
 				this.initFn(data);
@@ -406,17 +412,20 @@ let Restart;
 					you: this.faction.id,
 					allies: [],
 					enemies: [],
+					all: [],
 				},
 				ships:{
 					yours:[],
 					allies:[],
 					enemies:[],
+					all: [],
 				},
 				stations:{
 					yours:[],
 					allies:[],
 					unowned:[],
 					enemies:[],
+					all: [],
 				},
 				walls:[],
 				random:this.rand,
@@ -432,34 +441,37 @@ let Restart;
 				else {
 					data.factions.enemies.push(f.id);
 				}
+				data.factions.all.push(f.id);
 			});
 			ships.forEach((s)=>{
 				if(s.faction == this.faction){
 					data.ships.yours.push(s.sandbox(this.faction));
 				}
 				else if(this.faction.allies.includes(s.faction)){
-					data.ships.allies.push(s.sandbox());
+					data.ships.allies.push(s.sandbox(this.faction));
 				}
 				else {
-					data.ships.enemies.push(s.sandbox());
+					data.ships.enemies.push(s.sandbox(this.faction));
 				}
+				data.ships.all.push(s.sandbox(this.faction));
 			});
 			stations.forEach((s)=>{
 				if(s.faction == this.faction){
 					data.stations.yours.push(s.sandbox(this.faction));
 				}
 				else if(this.faction.allies.includes(s.faction)){
-					data.stations.allies.push(s.sandbox());
+					data.stations.allies.push(s.sandbox(this.faction));
 				}
 				else if(s.faction==null){
-					data.stations.unowned.push(s.sandbox());
+					data.stations.unowned.push(s.sandbox(this.faction));
 				}
 				else {
-					data.stations.enemies.push(s.sandbox());
+					data.stations.enemies.push(s.sandbox(this.faction));
 				}
+				data.stations.all.push(s.sandbox(this.faction));
 			});
 			walls.forEach((w)=>{
-				data.walls.push(w.sandbox());
+				data.walls.push(w.sandbox(this.faction));
 			});
 			try {
 				this.updateFn(data,STEP);
@@ -527,36 +539,42 @@ let Restart;
 			this.faction.ships.push(this);
 			ships.push(this);
 			objects.push(this);
+
+			this._sandboxes = [];
 		}
 		get x(){ return this._x; }
 		set x(v){ this.gfx.x = (this._x = v) * Viewport.scale; }
 		get y(){ return this._y; }
 		set y(v){ this.gfx.y = (this._y = v) * Viewport.scale; }
 		sandbox(caller){
-			return {
-				id: this.id,
-				faction: this.faction.id,
-				x: this.x,
-				y: this.y,
-				v: {
-					x: this.v.x,
-					y: this.v.y
-				},
-				size: this.size,
-				acceleration: this.acceleration,
-				weapon: {
-					distance: this.weapon.distance,
-					reload: this.weapon.reload,
-					refire: this.weapon.refire,
-					maxClip: this.weapon.maxClip,
-					clip: this.weapon.clip,
-					accuracy: this.weapon.accuracy,
-					firing: this.weapon.firing,
-					loading: this.weapon.loading,
-				},
-				thrust: (caller==this.faction?(t,a)=>{ this.thrust(t,a); }:null),
-				shoot: (caller==this.faction?(a)=>{ this.shoot(a); }:null),
-			};
+			if(!this._sandboxes[caller.id]){
+				this._sandboxes[caller.id] = {
+					id: this.id,
+					faction: this.faction.id,
+					v:{},
+					weapon: {},
+					thrust: (caller==this.faction?(t,a)=>{ this.thrust(t,a); }:null),
+					shoot: (caller==this.faction?(a)=>{ this.shoot(a); }:null),
+					reload: (caller==this.faction?()=>{ this.reload(); }:null)
+				};
+			}
+
+			this._sandboxes[caller.id].x = this.x;
+			this._sandboxes[caller.id].y = this.y;
+			this._sandboxes[caller.id].v.x = this.v.x;
+			this._sandboxes[caller.id].v.y = this.v.y;
+			this._sandboxes[caller.id].size = this.size;
+			this._sandboxes[caller.id].acceleration = this.acceleration;
+			this._sandboxes[caller.id].weapon.distance = this.weapon.distance;
+			this._sandboxes[caller.id].weapon.reload = this.weapon.reload;
+			this._sandboxes[caller.id].weapon.refire = this.weapon.refire;
+			this._sandboxes[caller.id].weapon.maxClip = this.weapon.maxClip;
+			this._sandboxes[caller.id].weapon.clip = this.weapon.clip;
+			this._sandboxes[caller.id].weapon.accuracy = this.weapon.accuracy;
+			this._sandboxes[caller.id].weapon.firing = this.weapon.firing;
+			this._sandboxes[caller.id].weapon.loading = this.weapon.loading;
+
+			return this._sandboxes[caller.id];
 		}
 		kill() { // Destroy with expolsion
 			this.destroy();
@@ -703,6 +721,7 @@ let Restart;
 			this.id = ID++;
 
 			this.size = 5;
+			this._doBuild = false;
 			// TODO: Implement upgrades
 			// this.production = {
 			// 	acceleration: 0.02d,
@@ -717,32 +736,43 @@ let Restart;
 			this.faction && this.faction.stations.push(this);
 			stations.push(this);
 			objects.push(this);
+
+			this._sandboxes = [];
 		}
 		get x(){ return this._x; }
 		set x(v){ this.gfx.x = (this._x = v) * Viewport.scale; }
 		get y(){ return this._y; }
 		set y(v){ this.gfx.y = (this._y = v) * Viewport.scale; }
 		sandbox(caller){
-			return {
-				id: this.id,
-				faction: this.faction?this.faction.id:0,
-				x: this.x,
-				y: this.y,
-				size: this.size,
-				resources: this.resources,
-				buildShip: (caller==this.faction?()=>{ return this.buildShip().sandbox(caller); }:null),
-			};
+			if(!this._sandboxes[caller.id]){
+				this._sandboxes[caller.id] = {
+					id: this.id,
+					faction: this.faction?this.faction.id:0,
+					buildShip: (caller==this.faction?()=>{ this.buildShip(); }:null),
+				};
+			}
+
+			this._sandboxes[caller.id].x = this.x;
+			this._sandboxes[caller.id].y = this.y;
+			this._sandboxes[caller.id].size = this.size;
+			this._sandboxes[caller.id].resources = this.resources;
+
+			return this._sandboxes[caller.id];
 		}
 		update(){
 			if(this.faction){
 				this.resources += Options.Game.ResourcesPerTick;
+
+				if(this._doBuild && this.resources > 100){
+					this.resources -= 100;
+					new Ship(this.x,this.y,{x:0,y:0},this.faction);
+				}
 			}
 		}
 		buildShip(){
 			// TODO Updates to ships the station produces
-			if(this.faction && this.resources > 100){
-				this.resources -= 100;
-				return new Ship(this.x,this.y,{x:0,y:0},this.faction);
+			if(this.faction && this.resources > 100-1){
+				this._doBuild = true;
 			}
 		}
 		setFaction(f){
@@ -777,16 +807,23 @@ let Restart;
 			this.gfx = new PIXI.Graphics();
 			View.Gameplay.Walls.addChild(this.gfx);
 			this.lastScale = -1;
+
 			walls.push(this);
 			objects.push(this);
+
+			this._sandboxes = [];
 		}
-		sandbox(){
-			return {
-				x1: this.x1,
-				y1: this.y1,
-				x2: this.x2,
-				y2: this.y2,
-			};
+		sandbox(caller){
+			if(!this._sandboxes[caller.id]){
+				this._sandboxes[caller.id] = { };
+			}
+
+			this._sandboxes[caller.id].x1 = this.x1;
+			this._sandboxes[caller.id].y1 = this.y1;
+			this._sandboxes[caller.id].x2 = this.x2;
+			this._sandboxes[caller.id].y2 = this.y2;
+
+			return this._sandboxes[caller.id];
 		}
 		destroy(){
 			this._destroyed = true;
@@ -893,7 +930,6 @@ let Restart;
 			}
 		}
 		// TODO: Graphics Stepping
-
 		Renderer.render(View);
 		requestAnimationFrame(loop);
 		FRAME++;

@@ -4,7 +4,7 @@
 	Hard-tabs, 4 spaces, LF, UTF-8
 */
 
-function MapGen_Triangles(N){
+function MapGen_Triangles(N, rand){
 	let ROT = Options.MapSettings.Rotation||0;
 	let j = 0;
 	let output = { stations:[], walls:[] };
@@ -45,6 +45,88 @@ function MapGen_Triangles(N){
 	return output;
 }
 
+function MapGen_SymSquare(NbFaction, rand){
+	if(NbFaction!==2){
+		throw new Error('This generator can only generate for 2 factions.')
+	}
+
+	let sizeX = 1000;
+	let sizeY = 700;
+	let minDistance = 100;
+
+	let output = { stations:[], walls:[] };
+
+	let ws = Options.MapSettings.WallSections || 32;
+	let wr = Options.MapSettings.WallRadius || 350;
+	// Creates the square wall
+	output.walls.push([{x:-sizeX/2,y:-sizeY/2},{x:sizeX/2,y:-sizeY/2}]);
+	output.walls.push([{x:-sizeX/2,y:-sizeY/2},{x:-sizeX/2,y:sizeY/2}]);
+	output.walls.push([{x:-sizeX/2,y:sizeY/2},{x:sizeX/2,y:sizeY/2}]);
+	output.walls.push([{x:sizeX/2,y:-sizeY/2},{x:sizeX/2,y:sizeY/2}]);
+
+	//determines the amount of station
+	let stationAmount = 13+Math.floor(10*rand());
+
+	let failedAttemps = 0;
+	for(let i=0; i<stationAmount; i++){
+		//generates a possible station
+		let possibleStation = {x:minDistance/2+(sizeX/2-0.5*minDistance)*rand(),y:minDistance/2+(sizeY-minDistance)*rand(),faction:0};
+
+		//checks if there are stations under the minDistance
+		let closeStations = output.stations.filter(function(s){return pd(possibleStation.x,possibleStation.y, s.x,s.y)<minDistance});
+
+		if(closeStations.length==0){
+			//It's okay its far enough
+			output.stations.push(possibleStation);
+		}
+		else if(closeStations.length){
+			//it's close to one station, let's try to project it out of it's range :
+			let distance = pd(possibleStation.x,possibleStation.y, closeStations[0].x,closeStations[0].y)
+			possibleStation.x = closeStations[0].x + (closeStations[0].x - possibleStation.x)*minDistance/distance;
+			possibleStation.y = closeStations[0].y + (closeStations[0].y - possibleStation.y)*minDistance/distance;
+
+			//check again and also if we are not out of bounds
+			if (output.stations.filter(function(s){return pd(possibleStation.x,possibleStation.y, s.x,s.y)<minDistance}).length==0 && (possibleStation.x>minDistance || possibleStation.x<(sizeX - minDistance)/2 || possibleStation.y>minDistance || possibleStation<sizeY - minDistance)){
+				output.stations.push(possibleStation);
+			}
+			else{
+				i--;
+				failedAttemps++
+			}
+		}
+		else{
+			// okay more than one station too close, fuck that.
+			i--;
+			failedAttemps++;
+		}
+		if(failedAttemps>10*stationAmount){
+			throw new Error('Spent too much time in generator trying to make a dense playing zone. Try reducing the minDistance or increase the size of arena.')
+		}
+	}
+
+	// let's do the central symmetry
+	let tempLength = output.stations.length;
+	for(let i = 0; i<tempLength; i++){
+		let station = output.stations[i];
+		let newStation = {x:0,y:0,f:0};
+		newStation.x = sizeX - station.x;
+		newStation.y = sizeY - station.y;
+		output.stations.push(newStation);
+	}
+
+	// Let's add factions
+	output.stations[0].faction=1;
+	output.stations[output.stations.length/2].faction=2;
+	// let's center our map
+	output.stations = output.stations.map(function(s){
+		s.x = s.x - sizeX/2;
+		s.y = s.y - sizeY/2;
+		return s;
+	})
+	return output;
+}
+
+
 let Options = {
 	Seed: 1337,
 	Gfx: {
@@ -78,7 +160,7 @@ let Options = {
 			}
 		},
 	],
-	MapGeneration: MapGen_Triangles,
+	MapGeneration: MapGen_SymSquare,
 	MapSettings: {
 		Rotation: 0,
 		WallSections: 32,
@@ -755,7 +837,7 @@ let Restart;
 			new Faction(f.name,f.color,new AI(f.ai.initFn,f.ai.updateFn));
 		});
 		// Generate Map
-		let Map = Options.MapGeneration( factions.length );
+		let Map = Options.MapGeneration( factions.length, rand );
 		Map.stations.forEach((s)=>{
 			new Station(s.x,s.y,s.faction?factions[s.faction-1]:null);
 		});

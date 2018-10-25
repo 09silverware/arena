@@ -386,6 +386,9 @@ let Restart;
 				else if(this.faction.allies.includes(s.faction)){
 					data.stations.allies.push(s.sandbox(this.faction));
 				}
+				else if(s.faction==null){
+					data.stations.unowned.push(s.sandbox());
+				}
 				else {
 					data.stations.enemies.push(s.sandbox(this.faction));
 				}
@@ -447,6 +450,9 @@ let Restart;
 				}
 				else if(this.faction.allies.includes(s.faction)){
 					data.stations.allies.push(s.sandbox());
+				}
+				else if(s.faction==null){
+					data.stations.unowned.push(s.sandbox());
 				}
 				else {
 					data.stations.enemies.push(s.sandbox());

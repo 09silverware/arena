@@ -370,7 +370,7 @@ let Restart;
 				else {
 					data.factions.enemies.push(f.id);
 				}
-				data.factions.all.push(s.sandbox(this.faction));
+				data.factions.all.push(f.id);
 			});
 			ships.forEach((s)=>{
 				if(s.faction == this.faction){
@@ -392,7 +392,7 @@ let Restart;
 					data.stations.allies.push(s.sandbox(this.faction));
 				}
 				else if(s.faction==null){
-					data.stations.unowned.push(s.sandbox());
+					data.stations.unowned.push(s.sandbox(this.faction));
 				}
 				else {
 					data.stations.enemies.push(s.sandbox(this.faction));
@@ -400,7 +400,7 @@ let Restart;
 				data.stations.all.push(s.sandbox(this.faction));
 			});
 			walls.forEach((w)=>{
-				data.walls.push(w.sandbox());
+				data.walls.push(w.sandbox(this.faction));
 			});
 			try {
 				this.initFn(data);
@@ -412,17 +412,20 @@ let Restart;
 					you: this.faction.id,
 					allies: [],
 					enemies: [],
+					all: [],
 				},
 				ships:{
 					yours:[],
 					allies:[],
 					enemies:[],
+					all: [],
 				},
 				stations:{
 					yours:[],
 					allies:[],
 					unowned:[],
 					enemies:[],
+					all: [],
 				},
 				walls:[],
 				random:this.rand,
@@ -438,34 +441,37 @@ let Restart;
 				else {
 					data.factions.enemies.push(f.id);
 				}
+				data.factions.all.push(f.id);
 			});
 			ships.forEach((s)=>{
 				if(s.faction == this.faction){
 					data.ships.yours.push(s.sandbox(this.faction));
 				}
 				else if(this.faction.allies.includes(s.faction)){
-					data.ships.allies.push(s.sandbox());
+					data.ships.allies.push(s.sandbox(this.faction));
 				}
 				else {
-					data.ships.enemies.push(s.sandbox());
+					data.ships.enemies.push(s.sandbox(this.faction));
 				}
+				data.ships.all.push(s.sandbox(this.faction));
 			});
 			stations.forEach((s)=>{
 				if(s.faction == this.faction){
 					data.stations.yours.push(s.sandbox(this.faction));
 				}
 				else if(this.faction.allies.includes(s.faction)){
-					data.stations.allies.push(s.sandbox());
+					data.stations.allies.push(s.sandbox(this.faction));
 				}
 				else if(s.faction==null){
-					data.stations.unowned.push(s.sandbox());
+					data.stations.unowned.push(s.sandbox(this.faction));
 				}
 				else {
-					data.stations.enemies.push(s.sandbox());
+					data.stations.enemies.push(s.sandbox(this.faction));
 				}
+				data.stations.all.push(s.sandbox(this.faction));
 			});
 			walls.forEach((w)=>{
-				data.walls.push(w.sandbox());
+				data.walls.push(w.sandbox(this.faction));
 			});
 			try {
 				this.updateFn(data,STEP);
@@ -740,8 +746,8 @@ let Restart;
 			if(!this._sandboxes[caller.id]){
 				this._sandboxes[caller.id] = {
 					id: this.id,
-					faction: this.faction?this.faction.id:0,,
-					buildShip: (caller==this.faction?()=>{ return this.buildShip().sandbox(caller); }:null),
+					faction: this.faction?this.faction.id:0,
+					buildShip: (caller==this.faction?()=>{ this.buildShip(); }:null),
 				};
 			}
 
@@ -806,15 +812,15 @@ let Restart;
 
 			this._sandboxes = [];
 		}
-		sandbox(){
+		sandbox(caller){
 			if(!this._sandboxes[caller.id]){
 				this._sandboxes[caller.id] = { };
 			}
 
-			this._sandboxes[caller.id].x1 = this.x1,
-			this._sandboxes[caller.id].y1 = this.y1,
-			this._sandboxes[caller.id].x2 = this.x2,
-			this._sandboxes[caller.id].y2 = this.y2,
+			this._sandboxes[caller.id].x1 = this.x1;
+			this._sandboxes[caller.id].y1 = this.y1;
+			this._sandboxes[caller.id].x2 = this.x2;
+			this._sandboxes[caller.id].y2 = this.y2;
 
 			return this._sandboxes[caller.id];
 		}

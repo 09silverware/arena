@@ -38,7 +38,7 @@
 			let STAT = data.stations.enemies.concat(data.stations.unowned);
 			S.forEach((s)=>{
 				D.fleets[s.id] = D.fleets[s.id] || [];
-				if(s.resources > 100){ let v; (v=s.buildShip()) && H.push(v); HA[v.id]=v; D.fleets[s.id].push(v.id); }
+				if(s.resources > 100){ s.buildShip(); }
 				D.fleets[s.id].slice().forEach((i)=>{
 					// Ship was destroyed
 					if(!Object.keys(HA).includes(i+'')){
@@ -96,7 +96,7 @@
 			});
 
 			S.forEach((s)=>{
-				if(s.resources > 100){ let v; (v=s.buildShip()) && H.push(v); }
+				if(s.resources > 100){ s.buildShip(); }
 			});
 
 			if(H.length > 5 || FL.act){

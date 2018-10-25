@@ -495,6 +495,7 @@ let Restart;
 		constructor(x,y,v,f){
 			if(!(f instanceof Faction)){ throw 'All ships must be in a faction'; }
 			this.faction = f;
+			this._destroyed = false;
 
 			this.gfx = new PIXI.Sprite(Textures.ship);
 			this.gfx.tint = this.faction.color;

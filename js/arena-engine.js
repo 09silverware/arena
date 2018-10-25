@@ -140,6 +140,7 @@ let Options = {
 		FriendlyFire: false,
 		ResourcesPerTick: 1,
 		WallsDestroy: true,	// TODO: false will make ships bounce on walls
+		PauseOnAIError: true,
 	},
 	Speed: 1,
 	Factions:[
@@ -404,7 +405,11 @@ let Restart;
 			});
 			try {
 				this.initFn(data);
-			} catch(e) { console.log(e); }
+			}
+			catch(e) {
+				Options.Speed = 0;
+				console.log(e);
+			}
 		}
 		update(){
 			let data = {
@@ -475,7 +480,11 @@ let Restart;
 			});
 			try {
 				this.updateFn(data,STEP);
-			} catch(e) { console.log(e); }
+			}
+			catch(e) {
+				Options.Speed = 0;
+				console.log(e);
+			}
 		}
 	}
 	class Faction {
@@ -748,7 +757,7 @@ let Restart;
 				this._sandboxes[caller.id] = {
 					id: this.id,
 					faction: this.faction?this.faction.id:0,
-					buildShip: (caller==this.faction?()=>{ this.buildShip(); }:null),
+					buildShip: (()=>{ if(caller==this.faction){ return this.buildShip(); } return false; }),
 				};
 			}
 

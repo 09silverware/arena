@@ -407,7 +407,7 @@ let Restart;
 				this.initFn(data);
 			}
 			catch(e) {
-				Options.Speed = 0;
+				Options.Game.PauseOnAIError && (Options.Speed = 0);
 				console.log(e);
 			}
 		}
@@ -482,7 +482,7 @@ let Restart;
 				this.updateFn(data,STEP);
 			}
 			catch(e) {
-				Options.Speed = 0;
+				Options.Game.PauseOnAIError && (Options.Speed = 0);
 				console.log(e);
 			}
 		}
@@ -594,6 +594,7 @@ let Restart;
 		}
 		destroy() { // Destroy without explosion
 			this._destroyed = true;
+			this._sandboxes.forEach((s)=>{ s.destroyed = true; });
 			this.gfx.destroy();
 			removeFromArray(objects,this);
 			removeFromArray(ships,this);
@@ -792,6 +793,7 @@ let Restart;
 		}
 		destroy(){
 			this._destroyed = true;
+			this._sandboxes.forEach((s)=>{ s.destroyed = true; });
 			this.faction && removeFromArray(this.faction.stations,this);
 			removeFromArray(stations,this);
 			removeFromArray(objects,this);
@@ -836,6 +838,7 @@ let Restart;
 		}
 		destroy(){
 			this._destroyed = true;
+			this._sandboxes.forEach((s)=>{ s.destroyed = true; });
 			this.gfx.destroy();
 			removeFromArray(walls,this);
 			removeFromArray(objects,this);

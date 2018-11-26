@@ -143,11 +143,12 @@
 			let H = data.ships.yours;
 			let FL = data.data;
 			let STAT = data.stations.enemies.concat(data.stations.unowned);
+			let SA = data.stations.all;
 			S.sort((a,b)=>{
 				return pd(a.x,a.y,0,0)-pd(b.x,b.y,0,0);
 			});
-			STAT.sort((a,b)=>{
-				return pd(a.x,a.y,0,0)-pd(b.x,b.y,0,0);
+			SA.sort((a,b)=>{
+				return pd(a.x,a.y,S[0].x,S[0].y)-pd(b.x,b.y,S[0].x,S[0].y);
 			});
 
 			S.forEach((s)=>{
@@ -156,7 +157,8 @@
 
 			let n = 0;
 			H.forEach((h)=>{
-				goto(h,STAT[n%STAT.length].x,STAT[n%STAT.length].y)
+				if(!h.target){ h.target = SA[n%SA.length]; }
+				goto(h,h.target.x,h.target.y)
 				let t = data.ships.enemies.filter((s)=>{
 					return pd(h.x,h.y,s.x,s.y) <= h.weapon.distance + s.size;
 				}).sort((a,b)=>{ return pd(a.x,a.y,h.x,h.y) - pd(b.x,b.y,h.x,h.y); });
@@ -179,12 +181,89 @@
 			});
 		}
 	});
+	let Rattler_update = ((data,step)=>{
+		let GO = data.stations.enemies.length + data.ships.enemies.length;
+		let ALIVE = data.stations.yours.length + data.ships.yours.length;
+		if(GO && ALIVE){
+			data.data.zulu = data.zulu || 50;
+			let S = data.stations.yours;
+			let H = data.ships.yours;
+			let FL = data.data;
+			// let STAT = data.stations.enemies.concat(data.stations.unowned);
+			let SN = data.ships.yours.concat(data.stations.unowned);
+			// let SA = data.stations.all;
+			S.sort((a,b)=>{
+				return pd(a.x,a.y,0,0)-pd(b.x,b.y,0,0);
+			});
+			SN.sort((a,b)=>{
+				return pd(a.x,a.y,S[0].x,S[0].y)-pd(b.x,b.y,S[0].x,S[0].y);
+			});
+
+			S.forEach((s)=>{
+				if(s.resources > 100){ s.buildShip(); }
+			});
+
+			let n = 0, T;
+			if(H.length > data.data.zulu){
+				T = data.stations.enemies[data.stations.enemies.length * data.random()**2 | 0];
+				data.data.zulu += 25;
+				console.log('BONZAI!');
+			}
+			H.forEach((h)=>{
+				if(!h.target){ h.target = SN[n%SN.length]; }
+				if(T){ h.target = T; }
+				goto(h,h.target.x,h.target.y)
+				let t = data.ships.enemies.filter((s)=>{
+					return pd(h.x,h.y,s.x,s.y) <= h.weapon.distance + s.size;
+				}).sort((a,b)=>{ return pd(a.x,a.y,h.x,h.y) - pd(b.x,b.y,h.x,h.y); });
+				if(t.length && (t = t[t.length * data.random()**2 | 0])){
+					h.shoot(pa(h.x,h.y,t.x,t.y));
+				}
+				n++;
+			});
+		}
+		else if(ALIVE) {
+			let H = data.ships.yours;
+			let t = H.length * 4;
+			let n = 0;
+			H.forEach((h)=>{
+				goto(h,
+					0 - t/2 + 4*n,
+					25 * Math.cos(step/100 + n * 50/t));
+				[0,1,2,3,4].includes((step+n)%80) && h.shoot(pa(h.x,h.y,h.x,1000)) || h.reload();
+				n++;
+			});
+		}
+	});
 
 	// Options.Factions[0].ai.initFn = null;
-	Options.Factions[0].ai.updateFn = Saber_update;
+	Options.Factions[0].ai.updateFn = Rattle_update;
 
 	// Options.Factions[1].ai.initFn = null;
-	Options.Factions[1].ai.updateFn = Rattle_update;
+	Options.Factions[1].ai.updateFn = Rattler_update;
+
+	// Options.Factions.push(
+	// 	{
+	// 		name: 'Yellow Team',
+	// 		color: 0xffff37,
+	// 		ai:{
+	// 			initFn: ()=>{},
+	// 			updateFn: Rattle_update,
+	// 		}
+	// 	},
+	// 	{
+	// 		name: 'Green Team',
+	// 		color: 0x37ff37,
+	// 		ai:{
+	// 			initFn: ()=>{},
+	// 			updateFn: Rattle_update,
+	// 		}
+	// 	},
+	// );
+
+	// Options.MapGeneration = MapGen_Triangles;
+	Options.Game.PauseOnAIError = false;
+	Options.Speed = 5;
 
 	Restart();
 </script>

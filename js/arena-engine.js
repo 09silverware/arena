@@ -141,6 +141,7 @@ let Options = {
 		ResourcesPerTick: 1,
 		WallsDestroy: true,	// TODO: false will make ships bounce on walls
 		PauseOnAIError: true,
+		LogDataOnError: true,
 	},
 	Speed: 1,
 	Factions:[
@@ -408,6 +409,7 @@ let Restart;
 			}
 			catch(e) {
 				Options.Game.PauseOnAIError && (Options.Speed = 0);
+				Options.Game.LogDataOnError && (console.log(data));
 				console.log(e);
 			}
 		}
@@ -483,6 +485,7 @@ let Restart;
 			}
 			catch(e) {
 				Options.Game.PauseOnAIError && (Options.Speed = 0);
+				Options.Game.LogDataOnError && (console.log(data));
 				console.log(e);
 			}
 		}

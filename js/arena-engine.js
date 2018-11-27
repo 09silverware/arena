@@ -767,7 +767,7 @@ let Restart;
 
 			this._sandboxes[caller.id].x = this.x;
 			this._sandboxes[caller.id].y = this.y;
-			this._sandboxes[caller.id].faction = (this.faction instanceof Faction?this.faction.id:0);
+			this._sandboxes[caller.id].faction = (this.faction instanceof Faction?this.faction.id:null);
 			this._sandboxes[caller.id].size = this.size;
 			this._sandboxes[caller.id].resources = this.resources;
 

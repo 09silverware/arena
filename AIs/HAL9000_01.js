@@ -21,7 +21,7 @@
 // TODO: still send scout to bases if the enemy scout has just captured it
 // TODO: Let an enemy capture a base to get free base without fight
 
-let Ownez_initFn = ((data,step)=>{
+let HAL9000_initFn = ((data,step)=>{
 
 	let d = data.data;
 
@@ -70,7 +70,7 @@ let Ownez_initFn = ((data,step)=>{
 	d.counterScanDistance = 150; //distance to scan for enemies for counter
 });
 
-let Ownez_updateFn = ((data,step)=>{
+let HAL9000_updateFn = ((data,step)=>{
 
 	if(data.stations.enemies.length==0){
 		data.ships.yours.forEach((s)=>{
